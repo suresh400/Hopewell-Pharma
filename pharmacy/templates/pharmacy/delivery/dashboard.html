@@ -1,0 +1,267 @@
+{% extends 'pharmacy/base.html' %}
+
+{% block title %}Delivery Dashboard - Online Pharmacy{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl font-bold mb-6">Delivery Dashboard</h1>
+    
+    <!-- Filter for Orders -->
+    <div class="bg-white rounded-lg shadow-md p-4 mb-6">
+        <form method="get" class="flex gap-4">
+            <select name="status" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                <option value="">All Status</option>
+                <option value="PENDING" {% if status_filter == 'PENDING' %}selected{% endif %}>Pending</option>
+                <option value="CONFIRMED" {% if status_filter == 'CONFIRMED' %}selected{% endif %}>Confirmed</option>
+                <option value="OUT_FOR_DELIVERY" {% if status_filter == 'OUT_FOR_DELIVERY' %}selected{% endif %}>Out for Delivery</option>
+                <option value="DELIVERED" {% if status_filter == 'DELIVERED' %}selected{% endif %}>Delivered</option>
+            </select>
+            <button type="submit" class="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700">
+                Filter
+            </button>
+        </form>
+    </div>
+    
+    <!-- Available Orders Section -->
+    {% if available_orders %}
+        <div class="mb-8">
+            <h2 class="text-2xl font-bold mb-4">Available Orders (Accept/Reject)</h2>
+            <div class="space-y-6">
+                {% for order in available_orders %}
+                    <div class="bg-yellow-50 border-2 border-yellow-300 rounded-lg shadow-md p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <div>
+                                <h3 class="text-xl font-semibold">Order #{{ order.id }}</h3>
+                                <p class="text-gray-600 text-sm">Placed on {{ order.placed_at|date:"F d, Y h:i A" }}</p>
+                                <p class="text-gray-700 font-semibold mt-1">
+                                    <span class="text-blue-600">Customer:</span> {{ order.user.get_full_name|default:order.user.username }} ({{ order.user.username }})
+                                </p>
+                                <p class="text-gray-600 text-sm">Email: {{ order.user.email }}</p>
+                            </div>
+                            <div class="text-right">
+                                <span class="px-4 py-2 rounded-full bg-yellow-100 text-yellow-800 font-semibold mb-2 block">
+                                    {{ order.get_status_display }}
+                                </span>
+                                <span class="px-4 py-2 rounded-full {% if order.payment_method == 'COD' %}bg-orange-100 text-orange-800{% else %}bg-green-100 text-green-800{% endif %} font-semibold">
+                                    {% if order.payment_method == 'COD' %}
+                                        💵 Cash on Delivery
+                                    {% else %}
+                                        ✅ Paid Online
+                                    {% endif %}
+                                </span>
+                            </div>
+                        </div>
+                        
+                        {% if order.address %}
+                            <div class="bg-white rounded-lg p-4 mb-4">
+                                <h4 class="font-semibold mb-2">📦 Delivery Address:</h4>
+                                <p class="text-gray-700"><strong>{{ order.address.full_name }}</strong></p>
+                                <p class="text-gray-700">{{ order.address.street_address }}</p>
+                                <p class="text-gray-700">{{ order.address.city }}, {{ order.address.state }} - {{ order.address.pincode }}</p>
+                                {% if order.address.landmark %}
+                                    <p class="text-gray-600 text-sm">Landmark: {{ order.address.landmark }}</p>
+                                {% endif %}
+                                <p class="text-gray-700 font-semibold mt-2">📞 Phone: {{ order.address.phone }}</p>
+                            </div>
+                        {% endif %}
+                        
+                        <div class="border-t pt-4 mb-4">
+                            <h4 class="font-semibold mb-3">🛍️ Order Details:</h4>
+                            <div class="space-y-3">
+                                {% for item in order.items.all %}
+                                    <div class="flex items-center justify-between bg-white rounded-lg p-3">
+                                        <div class="flex items-center space-x-4">
+                                            {% if item.medicine.get_image_url %}
+                                                <img src="{{ item.medicine.get_image_url }}" alt="{{ item.medicine.name }}" 
+                                                     class="w-16 h-16 object-cover rounded">
+                                            {% else %}
+                                                <div class="w-16 h-16 bg-gray-200 rounded flex items-center justify-center">
+                                                    <span class="text-2xl">💊</span>
+                                                </div>
+                                            {% endif %}
+                                            <div>
+                                                <p class="font-semibold text-gray-900">{{ item.medicine.name|default:"Deleted Medicine" }}</p>
+                                                <p class="text-sm text-gray-600">Quantity: {{ item.quantity }} × ₹{{ item.price }}</p>
+                                                {% if item.medicine %}
+                                                    <p class="text-xs text-gray-500">SKU: {{ item.medicine.sku }}</p>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                        <p class="font-semibold text-green-600">₹{{ item.get_total }}</p>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                            <div class="mt-4 pt-4 border-t bg-white rounded-lg p-4">
+                                <div class="flex justify-between items-center">
+                                    <div>
+                                        <p class="text-sm text-gray-600">Subtotal: ₹{{ order.subtotal }}</p>
+                                        <p class="text-sm text-gray-600">Tax (GST): ₹{{ order.tax }}</p>
+                                    </div>
+                                    <p class="text-xl font-bold text-green-600">Total: ₹{{ order.total }}</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="border-t pt-4 flex justify-between items-center">
+                            <div>
+                                <p class="text-sm text-gray-600">
+                                    <strong>Payment Method:</strong> 
+                                    <span class="{% if order.payment_method == 'COD' %}text-orange-600 font-semibold{% else %}text-green-600 font-semibold{% endif %}">
+                                        {{ order.get_payment_method_display }}
+                                    </span>
+                                </p>
+                                {% if order.payment_method == 'COD' %}
+                                    <p class="text-xs text-orange-600 mt-1">⚠️ Collect ₹{{ order.total }} on delivery</p>
+                                {% else %}
+                                    <p class="text-xs text-green-600 mt-1">✅ Payment already received</p>
+                                {% endif %}
+                            </div>
+                            <form method="post" action="{% url 'accept_order' order.id %}" class="inline">
+                                {% csrf_token %}
+                                <button type="submit" class="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 font-semibold">
+                                    ✓ Accept Order
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    {% endif %}
+    
+    <!-- My Assigned Orders Section -->
+    <div>
+        <h2 class="text-2xl font-bold mb-4">My Assigned Orders</h2>
+        {% if my_orders %}
+            <div class="space-y-6">
+                {% for order in my_orders %}
+                    <div class="bg-white rounded-lg shadow-md p-6 border-l-4 {% if order.status == 'DELIVERED' %}border-green-500{% elif order.status == 'OUT_FOR_DELIVERY' %}border-blue-500{% else %}border-yellow-500{% endif %}">
+                        <div class="flex items-center justify-between mb-4">
+                            <div>
+                                <h3 class="text-xl font-semibold">Order #{{ order.id }}</h3>
+                                <p class="text-gray-600 text-sm">Placed on {{ order.placed_at|date:"F d, Y h:i A" }}</p>
+                                <p class="text-gray-700 font-semibold mt-1">
+                                    <span class="text-blue-600">Customer:</span> {{ order.user.get_full_name|default:order.user.username }} ({{ order.user.username }})
+                                </p>
+                                <p class="text-gray-600 text-sm">Email: {{ order.user.email }}</p>
+                            </div>
+                            <div class="text-right">
+                                <span class="px-4 py-2 rounded-full {{ order.get_status_display_class }} font-semibold mb-2 block">
+                                    {{ order.get_status_display }}
+                                </span>
+                                <span class="px-4 py-2 rounded-full {% if order.payment_method == 'COD' %}bg-orange-100 text-orange-800{% else %}bg-green-100 text-green-800{% endif %} font-semibold">
+                                    {% if order.payment_method == 'COD' %}
+                                        💵 Cash on Delivery
+                                    {% else %}
+                                        ✅ Paid Online
+                                    {% endif %}
+                                </span>
+                            </div>
+                        </div>
+                        
+                        {% if order.address %}
+                            <div class="bg-gray-50 rounded-lg p-4 mb-4">
+                                <h4 class="font-semibold mb-2">📦 Delivery Address:</h4>
+                                <p class="text-gray-700"><strong>{{ order.address.full_name }}</strong></p>
+                                <p class="text-gray-700">{{ order.address.street_address }}</p>
+                                <p class="text-gray-700">{{ order.address.city }}, {{ order.address.state }} - {{ order.address.pincode }}</p>
+                                {% if order.address.landmark %}
+                                    <p class="text-gray-600 text-sm">Landmark: {{ order.address.landmark }}</p>
+                                {% endif %}
+                                <p class="text-gray-700 font-semibold mt-2">📞 Phone: {{ order.address.phone }}</p>
+                            </div>
+                        {% endif %}
+                        
+                        <div class="border-t pt-4 mb-4">
+                            <h4 class="font-semibold mb-3">🛍️ Order Details:</h4>
+                            <div class="space-y-3">
+                                {% for item in order.items.all %}
+                                    <div class="flex items-center justify-between bg-gray-50 rounded-lg p-3">
+                                        <div class="flex items-center space-x-4">
+                                            {% if item.medicine.get_image_url %}
+                                                <img src="{{ item.medicine.get_image_url }}" alt="{{ item.medicine.name }}" 
+                                                     class="w-16 h-16 object-cover rounded">
+                                            {% else %}
+                                                <div class="w-16 h-16 bg-gray-200 rounded flex items-center justify-center">
+                                                    <span class="text-2xl">💊</span>
+                                                </div>
+                                            {% endif %}
+                                            <div>
+                                                <p class="font-semibold text-gray-900">{{ item.medicine.name|default:"Deleted Medicine" }}</p>
+                                                <p class="text-sm text-gray-600">Quantity: {{ item.quantity }} × ₹{{ item.price }}</p>
+                                                {% if item.medicine %}
+                                                    <p class="text-xs text-gray-500">SKU: {{ item.medicine.sku }}</p>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                        <p class="font-semibold text-green-600">₹{{ item.get_total }}</p>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                            <div class="mt-4 pt-4 border-t bg-gray-50 rounded-lg p-4">
+                                <div class="flex justify-between items-center">
+                                    <div>
+                                        <p class="text-sm text-gray-600">Subtotal: ₹{{ order.subtotal }}</p>
+                                        <p class="text-sm text-gray-600">Tax (GST): ₹{{ order.tax }}</p>
+                                    </div>
+                                    <p class="text-xl font-bold text-green-600">Total: ₹{{ order.total }}</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="border-t pt-4 flex justify-between items-center">
+                            <div>
+                                <p class="text-sm text-gray-600">
+                                    <strong>Payment Method:</strong> 
+                                    <span class="{% if order.payment_method == 'COD' %}text-orange-600 font-semibold{% else %}text-green-600 font-semibold{% endif %}">
+                                        {{ order.get_payment_method_display }}
+                                    </span>
+                                </p>
+                                {% if order.payment_method == 'COD' %}
+                                    <p class="text-xs text-orange-600 mt-1">⚠️ Collect ₹{{ order.total }} on delivery</p>
+                                {% else %}
+                                    <p class="text-xs text-green-600 mt-1">✅ Payment already received</p>
+                                {% endif %}
+                            </div>
+                            <div class="flex items-center space-x-4">
+                                {% if order.status == 'CONFIRMED' %}
+                                    <form method="post" action="{% url 'update_delivery_status' order.id %}" class="inline">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="status" value="OUT_FOR_DELIVERY">
+                                        <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 font-semibold">
+                                            🚚 Mark as Out for Delivery
+                                        </button>
+                                    </form>
+                                    <form method="post" action="{% url 'reject_order' order.id %}" class="inline">
+                                        {% csrf_token %}
+                                        <button type="submit" class="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700 font-semibold" onclick="return confirm('Are you sure you want to reject this order? It will become available for other agents.')">
+                                            ✗ Reject Order
+                                        </button>
+                                    </form>
+                                {% elif order.status == 'OUT_FOR_DELIVERY' %}
+                                    <form method="post" action="{% url 'update_delivery_status' order.id %}" class="inline">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="status" value="DELIVERED">
+                                        <button type="submit" class="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 font-semibold">
+                                            ✅ Mark as Delivered
+                                        </button>
+                                    </form>
+                                {% elif order.status == 'DELIVERED' %}
+                                    <span class="text-green-600 font-semibold text-lg">✓ Order Delivered Successfully</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="bg-white rounded-lg shadow-md p-12 text-center">
+                <p class="text-2xl text-gray-500">No orders assigned to you</p>
+                {% if not available_orders %}
+                    <p class="text-gray-400 mt-2">No orders are currently available for delivery</p>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

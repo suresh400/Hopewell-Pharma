@@ -1,0 +1,33 @@
+{% extends 'pharmacy/base.html' %}
+
+{% block title %}Order Success - Online Pharmacy{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-12 text-center">
+    <div class="bg-white rounded-lg shadow-lg p-8">
+        <div class="text-6xl mb-4">✅</div>
+        <h1 class="text-3xl font-bold text-green-600 mb-4">Order Placed Successfully!</h1>
+        <p class="text-gray-600 mb-6">Thank you for your order. Your order ID is <strong>#{{ order.id }}</strong></p>
+        
+        <div class="bg-gray-50 rounded-lg p-6 mb-6 text-left">
+            <h2 class="text-xl font-semibold mb-4">Order Details</h2>
+            <div class="space-y-2">
+                <p><span class="font-semibold">Order ID:</span> #{{ order.id }}</p>
+                <p><span class="font-semibold">Total Amount:</span> ₹{{ order.total }}</p>
+                <p><span class="font-semibold">Payment Method:</span> {{ order.get_payment_method_display }}</p>
+                <p><span class="font-semibold">Status:</span> <span class="px-2 py-1 rounded {{ order.get_status_display_class }}">{{ order.get_status_display }}</span></p>
+            </div>
+        </div>
+        
+        <div class="flex space-x-4 justify-center">
+            <a href="{% url 'my_orders' %}" class="bg-green-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-green-700">
+                View My Orders
+            </a>
+            <a href="{% url 'customer_dashboard' %}" class="bg-gray-200 text-gray-800 px-6 py-3 rounded-lg font-semibold hover:bg-gray-300">
+                Continue Shopping
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

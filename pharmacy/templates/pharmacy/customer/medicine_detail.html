@@ -1,0 +1,293 @@
+{% extends 'pharmacy/base.html' %}
+
+{% block title %}{{ medicine.name }} - Online Pharmacy{% endblock %}
+
+{% block content %}
+<div class="bg-white max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 animate-fade-in">
+        <!-- Product Images -->
+        <div class="bg-white rounded-lg shadow-lg p-6 animate-slide-up relative">
+            {% if medicine.get_all_images %}
+                <div class="mb-4 relative">
+                    <img id="mainImage" src="{{ medicine.get_all_images.0 }}" alt="{{ medicine.name }}" class="w-full h-96 object-contain rounded-lg">
+                    {% if medicine.get_all_images|length > 1 %}
+                        <button onclick="previousImage()" class="absolute left-2 top-1/2 transform -translate-y-1/2 bg-white bg-opacity-80 hover:bg-opacity-100 text-primary p-3 rounded-full shadow-lg transition-all hover:scale-110 z-10">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                            </svg>
+                        </button>
+                        <button onclick="nextImage()" class="absolute right-2 top-1/2 transform -translate-y-1/2 bg-white bg-opacity-80 hover:bg-opacity-100 text-primary p-3 rounded-full shadow-lg transition-all hover:scale-110 z-10">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                            </svg>
+                        </button>
+                        <div class="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-black bg-opacity-50 text-white px-3 py-1 rounded-full text-sm">
+                            <span id="imageCounter">1</span> / {{ medicine.get_all_images|length }}
+                        </div>
+                    {% endif %}
+                </div>
+            {% else %}
+                <div class="w-full h-96 bg-secondary rounded-lg flex items-center justify-center">
+                    <span class="text-9xl">💊</span>
+                </div>
+            {% endif %}
+        </div>
+        
+        <!-- Product Details -->
+        <div class="bg-white rounded-lg shadow-lg p-6">
+            <h1 class="text-3xl font-bold text-gray-800 mb-4">{{ medicine.name }}</h1>
+            
+            <div class="mb-6">
+                <div class="flex items-center space-x-4 mb-4">
+                    <span class="text-3xl font-bold text-primary">₹{{ medicine.price }}</span>
+                    {% if medicine.mrp > medicine.price %}
+                        <span class="text-xl text-gray-500 line-through">₹{{ medicine.mrp }}</span>
+                        <span class="text-green-600 font-semibold">
+                            {{ medicine.get_discount_percentage|floatformat:0 }}% OFF
+                        </span>
+                    {% endif %}
+                </div>
+                {% if medicine.stock == 0 %}
+    <span class="inline-block bg-red-100 text-red-800 px-3 py-1 rounded-full text-sm font-semibold">
+        Out of Stock
+    </span>
+{% elif medicine.stock <= 10 %}
+    <span class="inline-block bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-sm font-semibold">
+        Low Stock ({{ medicine.stock }})
+    </span>
+{% else %}
+    <span class="inline-block bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-semibold">
+        In Stock ({{ medicine.stock }})
+    </span>
+{% endif %}
+
+                {% if medicine.prescription_required %}
+                    <span class="inline-block bg-orange-100 text-orange-800 px-3 py-1 rounded-full text-sm font-semibold ml-2">
+                        ⚠️ Prescription Required
+                    </span>
+                {% endif %}
+            </div>
+            
+            <div class="mb-6">
+                <h2 class="text-xl font-semibold mb-2">Description</h2>
+                <div id="descriptionContainer">
+                    <p id="descriptionText" class="text-gray-700">{{ medicine.description }}</p>
+                </div>
+                {% if medicine.description|wordcount > 150 %}
+                    <button id="toggleDescription" onclick="toggleDescription()" class="mt-2 text-primary hover:underline font-semibold transition-colors">
+                        Show More
+                    </button>
+                {% endif %}
+            </div>
+            
+            <!-- Add to Cart -->
+            {% if medicine.stock > 0 %}
+                <div class="mb-6">
+                    <div class="flex items-center space-x-4 mb-4">
+                        <label class="font-semibold">Quantity:</label>
+                        <input type="number" id="quantity" value="1" min="1" max="{{ medicine.stock }}" 
+                               class="w-20 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary">
+                    </div>
+                    <button onclick="addToCart({{ medicine.id }})" 
+                            class="w-full bg-primary text-white py-3 px-6 rounded-lg font-semibold hover:bg-opacity-90 transition-all transform hover:scale-105 shadow-lg">
+                        Add to Cart
+                    </button>
+                    {% if not user.is_authenticated %}
+                        <p class="text-sm text-gray-600 mt-2">Please <a href="{% url 'login' %}" class="text-primary hover:underline">login</a> to checkout.</p>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Benefits -->
+    {% if medicine.benefits %}
+        <div class="bg-white rounded-lg shadow-lg p-6 mt-8 animate-slide-up">
+            <h2 class="text-2xl font-bold mb-4">Benefits</h2>
+            <ul class="list-disc list-inside space-y-2">
+                {% for benefit in medicine.benefits %}
+                    <li class="text-gray-700">{{ benefit }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+    {% endif %}
+    
+    <!-- How to Use -->
+    {% if medicine.how_to_use %}
+        <div class="bg-white rounded-lg shadow-lg p-6 mt-8 animate-slide-up">
+            <h2 class="text-2xl font-bold mb-4">How to Use</h2>
+            <ul class="list-disc list-inside space-y-2">
+                {% for instruction in medicine.how_to_use %}
+                    <li class="text-gray-700">{{ instruction }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+    {% endif %}
+    
+    <!-- Side Effects -->
+    {% if medicine.side_effects %}
+        <div class="bg-white rounded-lg shadow-lg p-6 mt-8 animate-slide-up">
+            <h2 class="text-2xl font-bold mb-4">Side Effects</h2>
+            <ul class="list-disc list-inside space-y-2">
+                {% for effect in medicine.side_effects %}
+                    <li class="text-gray-700">{{ effect }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+    {% endif %}
+    
+    <!-- FAQs -->
+    {% if medicine.faqs %}
+        <div class="bg-white rounded-lg shadow-lg p-6 mt-8 animate-slide-up">
+            <h2 class="text-2xl font-bold mb-4">Frequently Asked Questions</h2>
+            <div class="space-y-4">
+                {% for faq in medicine.faqs %}
+                    <details class="border border-gray-200 rounded-lg p-4 hover:border-primary transition-colors">
+                        <summary class="font-semibold text-gray-800 cursor-pointer hover:text-primary">
+                            {{ faq.q }}
+                        </summary>
+                        <p class="mt-2 text-gray-700">{{ faq.a }}</p>
+                    </details>
+                {% endfor %}
+            </div>
+        </div>
+    {% endif %}
+    
+    <!-- Reviews -->
+    <div class="bg-white rounded-lg shadow-lg p-6 mt-8 animate-slide-up">
+        <h2 class="text-2xl font-bold mb-4">Customer Reviews</h2>
+        
+        {% if can_review %}
+            <div class="mb-6 border-b pb-6">
+                <h3 class="text-xl font-semibold mb-4">Write a Review</h3>
+                <form method="post" class="space-y-4">
+                    {% csrf_token %}
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Rating</label>
+                        {{ review_form.rating }}
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Feedback</label>
+                        {{ review_form.feedback }}
+                    </div>
+                    <button type="submit" class="bg-primary text-white px-6 py-2 rounded-lg hover:bg-opacity-90 transition-all transform hover:scale-105">
+                        Submit Review
+                    </button>
+                </form>
+            </div>
+        {% endif %}
+        
+        <div class="space-y-4">
+            {% for review in reviews %}
+                <div class="border-b pb-4 hover:bg-gray-50 p-3 rounded-lg transition-colors">
+                    <div class="flex items-center justify-between mb-2">
+                        <div>
+                            <span class="font-semibold">{{ review.user.username }}</span>
+                            <div class="flex items-center">
+                                {% for i in "12345" %}
+                                    {% if forloop.counter <= review.rating %}
+                                        <span class="text-yellow-400">★</span>
+                                    {% else %}
+                                        <span class="text-gray-300">★</span>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <span class="text-sm text-gray-500">{{ review.created_at|date:"M d, Y" }}</span>
+                    </div>
+                    <p class="text-gray-700">{{ review.feedback }}</p>
+                </div>
+            {% empty %}
+                <p class="text-gray-500">No reviews yet. Be the first to review!</p>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<script>
+function addToCart(medicineId) {
+    const quantity = document.getElementById('quantity').value;
+    const formData = new FormData();
+    formData.append('medicine_id', medicineId);
+    formData.append('quantity', quantity);
+    formData.append('csrfmiddlewaretoken', csrftoken);
+    
+    fetch('{% url "add_to_cart" %}', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Item added to cart!');
+            if (data.cart_count) {
+                location.reload();
+            }
+        } else {
+            alert(data.message || 'Failed to add item to cart');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred');
+    });
+}
+
+let currentImageIndex = 0;
+const allImages = [{% for img_url in medicine.get_all_images %}'{{ img_url }}'{% if not forloop.last %},{% endif %}{% endfor %}];
+
+function changeMainImage(imgUrl) {
+    document.getElementById('mainImage').src = imgUrl;
+    currentImageIndex = allImages.indexOf(imgUrl);
+    updateImageCounter();
+}
+
+function nextImage() {
+    if (allImages.length > 0) {
+        currentImageIndex = (currentImageIndex + 1) % allImages.length;
+        document.getElementById('mainImage').src = allImages[currentImageIndex];
+        updateImageCounter();
+    }
+}
+
+function previousImage() {
+    if (allImages.length > 0) {
+        currentImageIndex = (currentImageIndex - 1 + allImages.length) % allImages.length;
+        document.getElementById('mainImage').src = allImages[currentImageIndex];
+        updateImageCounter();
+    }
+}
+
+function updateImageCounter() {
+    const counter = document.getElementById('imageCounter');
+    if (counter) {
+        counter.textContent = currentImageIndex + 1;
+    }
+}
+
+function toggleDescription() {
+    const descriptionText = document.getElementById('descriptionText');
+    const toggleBtn = document.getElementById('toggleDescription');
+    
+    if (descriptionText && toggleBtn) {
+        if (descriptionText.classList.contains('line-clamp-6')) {
+            descriptionText.classList.remove('line-clamp-6');
+            toggleBtn.textContent = 'Show Less';
+        } else {
+            descriptionText.classList.add('line-clamp-6');
+            toggleBtn.textContent = 'Show More';
+        }
+    }
+}
+
+// Initialize description truncation if needed
+{% if medicine.description|wordcount > 150 %}
+document.addEventListener('DOMContentLoaded', function() {
+    const descText = document.getElementById('descriptionText');
+    if (descText) {
+        descText.classList.add('line-clamp-6');
+    }
+});
+{% endif %}
+</script>
+{% endblock %}

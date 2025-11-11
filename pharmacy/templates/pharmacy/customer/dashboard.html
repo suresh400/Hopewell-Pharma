@@ -1,0 +1,70 @@
+{% extends 'pharmacy/base.html' %}
+
+{% block title %}Medicines - Online Pharmacy{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl font-bold mb-6">Browse Medicines</h1>
+    
+    <!-- Filters -->
+    <div class="rounded-lg shadow-md p-6 mb-6">
+        <form method="get" class="flex flex-col md:flex-row gap-4">
+            <input type="text" name="q" value="{% if query %}{{ query }}{% endif %}" placeholder="Search medicines..." 
+                   class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+            <select name="category" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                <option value="">All Categories</option>
+                {% for category in categories %}
+                    <option value="{{ category.id }}" {% if selected_category == category.id|stringformat:"s" %}selected{% endif %}>
+                        {{ category.name }}
+                    </option>
+                {% endfor %}
+            </select>
+            <button type="submit" class="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700">
+                Filter
+            </button>
+        </form>
+    </div>
+    
+    <!-- Medicines Grid -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        {% for medicine in medicines %}
+            <div class="bg-white rounded-lg shadow-md overflow-hidden group transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
+                <a href="{% url 'medicine_detail' medicine.pk %}" class="block">
+                    {% if medicine.get_image_url %}
+                        <img src="{{ medicine.get_image_url }}" alt="{{ medicine.name }}" class="w-full h-48 object-cover transition-transform duration-300 group-hover:scale-105">
+                    {% else %}
+                        <div class="w-full h-48 bg-gray-200 flex items-center justify-center transition-colors duration-300 group-hover:bg-secondary">
+                            <span class="text-6xl">💊</span>
+                        </div>
+                    {% endif %}
+                    <div class="p-4">
+                        <h3 class="font-semibold text-gray-800 mb-2 line-clamp-2 group-hover:text-primary transition-colors">{{ medicine.name }}</h3>
+                        <div class="flex items-center justify-between mb-2">
+                            <div>
+                                <span class="text-lg font-bold text-green-600">₹{{ medicine.price }}</span>
+                                {% if medicine.mrp > medicine.price %}
+                                    <span class="text-sm text-gray-500 line-through ml-2">₹{{ medicine.mrp }}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% if medicine.stock == 0 %}
+                        <span class="text-xs text-red-600">Out of Stock</span>
+                    {% elif medicine.stock <= 10 %}
+                        <span class="text-xs text-yellow-600">Low Stock ({{ medicine.stock }})</span>
+                    {% else %}
+                        <span class="text-xs text-green-600">In Stock ({{ medicine.stock }})</span>
+                    {% endif %}
+                    
+                        {% if medicine.prescription_required %}
+                            <span class="text-xs text-orange-600 block mt-1">⚠️ Prescription Required</span>
+                        {% endif %}
+                    </div>
+                </a>
+            </div>
+        {% empty %}
+            <p class="text-gray-500 col-span-4 text-center py-12">No medicines found.</p>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
+

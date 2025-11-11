@@ -1,0 +1,74 @@
+{% extends 'pharmacy/base.html' %}
+
+{% block title %}My Orders - Online Pharmacy{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl font-bold mb-6">My Orders</h1>
+    
+    {% if orders %}
+        <div class="space-y-6">
+            {% for order in orders %}
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <div>
+                            <h2 class="text-xl font-semibold">Order #{{ order.id }}</h2>
+                            <p class="text-gray-600 text-sm">Placed on {{ order.placed_at|date:"F d, Y h:i A" }}</p>
+                        </div>
+                        <span class="px-4 py-2 rounded-full {{ order.get_status_display_class }}">
+                            {{ order.get_status_display }}
+                        </span>
+                    </div>
+                    
+                    <div class="border-t pt-4 mb-4">
+                        <h3 class="font-semibold mb-2">Items:</h3>
+                        <div class="space-y-2">
+                            {% for item in order.items.all %}
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center space-x-4">
+                                        {% if item.medicine.get_image_url %}
+                                            <img src="{{ item.medicine.get_image_url }}" alt="{{ item.medicine.name }}" 
+                                                 class="w-12 h-12 object-cover rounded">
+                                        {% else %}
+                                            <div class="w-12 h-12 bg-gray-200 rounded flex items-center justify-center">
+                                                <span class="text-xl">💊</span>
+                                            </div>
+                                        {% endif %}
+                                        <div>
+                                            <p class="font-semibold">{{ item.medicine.name|default:"Deleted Medicine" }}</p>
+                                            <p class="text-sm text-gray-600">Qty: {{ item.quantity }} × ₹{{ item.price }}</p>
+                                        </div>
+                                    </div>
+                                    <p class="font-semibold">₹{{ item.get_total }}</p>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
+                    <div class="border-t pt-4">
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <p class="text-sm text-gray-600">Payment: {{ order.get_payment_method_display }}</p>
+                                {% if order.address %}
+                                    <p class="text-sm text-gray-600">Delivery to: {{ order.address.city }}, {{ order.address.state }}</p>
+                                {% endif %}
+                            </div>
+                            <div class="text-right">
+                                <p class="text-lg font-bold text-green-600">Total: ₹{{ order.total }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="bg-white rounded-lg shadow-md p-12 text-center">
+            <p class="text-2xl text-gray-500 mb-4">No orders yet</p>
+            <a href="{% url 'customer_dashboard' %}" class="text-green-600 hover:underline">
+                Start Shopping
+            </a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+

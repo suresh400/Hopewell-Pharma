@@ -1,0 +1,64 @@
+{% extends 'pharmacy/base.html' %}
+
+{% block title %}Notifications - Online Pharmacy{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-3xl font-bold">Notifications</h1>
+        {% if unread_count > 0 %}
+            <form method="post" action="{% url 'mark_all_notifications_read' %}" class="inline">
+                {% csrf_token %}
+                <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm font-semibold">
+                    Mark All as Read
+                </button>
+            </form>
+        {% endif %}
+    </div>
+    
+    {% if notifications %}
+        <div class="space-y-4">
+            {% for notification in notifications %}
+                <div class="bg-white rounded-lg shadow-md p-6 {% if not notification.is_read %}border-l-4 border-blue-500 bg-blue-50{% else %}border-l-4 border-gray-200{% endif %} hover:shadow-lg transition-shadow">
+                    <div class="flex items-start justify-between">
+                        <div class="flex-1">
+                            <div class="flex items-center space-x-3 mb-2">
+                                <h3 class="text-lg font-semibold {% if not notification.is_read %}text-blue-800{% else %}text-gray-800{% endif %}">
+                                    {{ notification.title }}
+                                </h3>
+                                {% if not notification.is_read %}
+                                    <span class="px-2 py-1 text-xs font-semibold rounded-full bg-blue-500 text-white">New</span>
+                                {% endif %}
+                            </div>
+                            <p class="text-gray-700 mb-3 leading-relaxed">{{ notification.message }}</p>
+                            <div class="flex items-center space-x-4 text-sm text-gray-500">
+                                <span>📅 {{ notification.created_at|date:"M d, Y h:i A" }}</span>
+                                {% if notification.order %}
+                                    <a href="{% if user.profile.role == 'CUSTOMER' %}{% url 'my_orders' %}{% elif user.profile.role == 'DELIVERY_AGENT' %}{% url 'delivery_dashboard' %}{% else %}{% url 'pharmacist_orders' %}{% endif %}" class="text-blue-600 hover:underline font-semibold">
+                                        View Order #{{ notification.order.id }}
+                                    </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% if not notification.is_read %}
+                            <form method="post" action="{% url 'mark_notification_read' notification.id %}" class="ml-4">
+                                {% csrf_token %}
+                                <button type="submit" class="text-gray-400 hover:text-green-600 text-xl font-bold" title="Mark as read">
+                                    ✓
+                                </button>
+                            </form>
+                        {% else %}
+                            <span class="text-gray-300 text-xl ml-4">✓</span>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="bg-white rounded-lg shadow-md p-12 text-center">
+            <p class="text-2xl text-gray-500 mb-2">No notifications</p>
+            <p class="text-gray-400">You're all caught up!</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

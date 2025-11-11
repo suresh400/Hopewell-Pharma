@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Online Pharmacy{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#0F9E99',
+                        secondary: '#EFE9E0',
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.5s ease-in',
+                        'slide-up': 'slideUp 0.5s ease-out',
+                        'bounce-slow': 'bounce 2s infinite',
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' },
+                        },
+                        slideUp: {
+                            '0%': { transform: 'translateY(20px)', opacity: '0' },
+                            '100%': { transform: 'translateY(0)', opacity: '1' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes slideUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body class="bg-white flex flex-col min-h-screen">
+    <!-- Navbar -->
+    <nav class="bg-white shadow-lg sticky top-0 z-50 animate-fade-in">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center">
+                    <a href="{% url 'home' %}" class="text-2xl font-bold text-primary hover:scale-105 transition-transform">💊 HopeWell Pharma</a>
+                </div>
+                
+                <div class="flex items-center space-x-4">
+                    {% if user.is_authenticated %}
+                        {% if user.profile.role == 'CUSTOMER' %}
+                            <a href="{% url 'customer_dashboard' %}" class="text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium transition-colors">Medicines</a>
+                            <a href="{% url 'my_orders' %}" class="text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium transition-colors">My Orders</a>
+                        {% elif user.profile.role == 'PHARMACIST' %}
+                            <a href="{% url 'pharmacist_dashboard' %}" class="text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium transition-colors">Dashboard</a>
+                            <a href="{% url 'medicine_list' %}" class="text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium transition-colors">Medicines</a>
+                            <a href="{% url 'category_list' %}" class="text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium transition-colors">Categories</a>
+                            <a href="{% url 'pharmacist_orders' %}" class="text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium transition-colors">Orders</a>
+                        {% elif user.profile.role == 'DELIVERY_AGENT' %}
+                            <a href="{% url 'delivery_dashboard' %}" class="text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium transition-colors">Delivery</a>
+                        {% endif %}
+                        
+                        <!-- Cart Icon (only for customers) -->
+                        {% if user.profile.role == 'CUSTOMER' %}
+                            <a href="{% url 'cart' %}" class="relative text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                                <span class="text-2xl">🛒</span>
+                                {% if cart_count > 0 %}
+                                    <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center animate-bounce">{{ cart_count }}</span>
+                                {% endif %}
+                            </a>
+                        {% endif %}
+                        
+                        <!-- Notifications Icon -->
+                        <div class="relative">
+                            <a href="{% url 'notifications_list' %}" class="relative text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                                <span class="text-2xl">🔔</span>
+                                {% if unread_notification_count > 0 %}
+                                    <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center animate-pulse">{{ unread_notification_count }}</span>
+                                {% endif %}
+                            </a>
+                        </div>
+                        
+                        <!-- Profile Dropdown -->
+                        <div class="relative group">
+                            <button class="flex items-center space-x-2 text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium transition-colors focus:outline-none">
+                                <span class="text-2xl">👤</span>
+                                <span class="hidden md:inline">{{ user.username }}</span>
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                </svg>
+                            </button>
+                            <div class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl py-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 transform group-hover:translate-y-0 translate-y-2">
+                                <a href="{% url 'profile_view' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-secondary hover:text-primary transition-colors">👤 Profile</a>
+                                <a href="{% url 'change_password' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-secondary hover:text-primary transition-colors">🔒 Change Password</a>
+                                <hr class="my-1">
+                                <a href="{% url 'logout' %}" class="block px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors">🚪 Logout</a>
+                            </div>
+                        </div>
+                    {% else %}
+                        <a href="{% url 'login' %}" class="text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium transition-colors">Login</a>
+                        <a href="{% url 'register' %}" class="bg-primary text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-opacity-90 transition-all transform hover:scale-105">Register</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Messages -->
+    {% if messages %}
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4 animate-slide-up">
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} bg-{% if message.tags == 'error' %}red{% elif message.tags == 'success' %}green{% else %}blue{% endif %}-100 border border-{% if message.tags == 'error' %}red{% elif message.tags == 'success' %}green{% else %}blue{% endif %}-400 text-{% if message.tags == 'error' %}red{% elif message.tags == 'success' %}green{% else %}blue{% endif %}-700 px-4 py-3 rounded relative mb-4" role="alert">
+                    <span class="block sm:inline">{{ message }}</span>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <!-- Main Content -->
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+   <footer class="bg-gray-800 text-white mt-auto">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div>
+                <h3 class="text-lg font-bold mb-4">HopeWell Pharma</h3>
+                <p class="text-gray-400">Your trusted online pharmacy for all your medical needs.</p>
+            </div>
+            <div>
+                <h3 class="text-lg font-bold mb-4">Quick Links</h3>
+                <ul class="space-y-2 text-gray-400">
+                    <li><a href="{% url 'home' %}" class="hover:text-white transition-colors">Home</a></li>
+                    <li><a href="{% url 'customer_dashboard' %}" class="hover:text-white transition-colors">Medicines</a></li>
+                </ul>
+            </div>
+            <div>
+                <h3 class="text-lg font-bold mb-4">Contact</h3>
+                <p class="text-gray-400">Email: support@hopewellpharma.com</p>
+                <p class="text-gray-400">Phone: +1 234 567 8900</p>
+            </div>
+        </div>
+        <div class="border-t border-gray-700 mt-8 pt-8 text-center text-gray-400">
+            <p>&copy; 2025 HopeWell Pharma. All rights reserved.</p>
+        </div>
+    </div>
+</footer>
+
+
+    <!-- CSRF Token for AJAX -->
+    <script>
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+        const csrftoken = getCookie('csrftoken');
+    </script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

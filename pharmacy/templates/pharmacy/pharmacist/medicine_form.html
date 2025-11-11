@@ -1,0 +1,206 @@
+{% extends 'pharmacy/base.html' %}
+
+{% block title %}{{ title }} - Pharmacist{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl font-bold mb-6">{{ title }}</h1>
+    
+    <div class="bg-white rounded-lg shadow-md p-6">
+        <form method="post" enctype="multipart/form-data" class="space-y-6">
+            {% csrf_token %}
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                    {{ form.category }}
+                    {% if form.category.errors %}
+                        <p class="text-red-500 text-sm mt-1">{{ form.category.errors }}</p>
+                    {% endif %}
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Supplier</label>
+                    {{ form.supplier }}
+                    {% if form.supplier.errors %}
+                        <p class="text-red-500 text-sm mt-1">{{ form.supplier.errors }}</p>
+                    {% endif %}
+                    <p class="text-xs text-gray-500 mt-1">Enter supplier name (e.g., "ABC Pharmaceuticals", "XYZ Medical")</p>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">SKU</label>
+                    {{ form.sku }}
+                    {% if form.sku.errors %}
+                        <p class="text-red-500 text-sm mt-1">{{ form.sku.errors }}</p>
+                    {% endif %}
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                    {{ form.name }}
+                    {% if form.name.errors %}
+                        <p class="text-red-500 text-sm mt-1">{{ form.name.errors }}</p>
+                    {% endif %}
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">MRP</label>
+                    {{ form.mrp }}
+                    {% if form.mrp.errors %}
+                        <p class="text-red-500 text-sm mt-1">{{ form.mrp.errors }}</p>
+                    {% endif %}
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Price</label>
+                    {{ form.price }}
+                    {% if form.price.errors %}
+                        <p class="text-red-500 text-sm mt-1">{{ form.price.errors }}</p>
+                    {% endif %}
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">GST %</label>
+                    {{ form.gst_percent }}
+                    {% if form.gst_percent.errors %}
+                        <p class="text-red-500 text-sm mt-1">{{ form.gst_percent.errors }}</p>
+                    {% endif %}
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Stock</label>
+                    {{ form.stock }}
+                    {% if form.stock.errors %}
+                        <p class="text-red-500 text-sm mt-1">{{ form.stock.errors }}</p>
+                    {% endif %}
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Expiry Date</label>
+                    {{ form.expiry_date }}
+                    {% if form.expiry_date.errors %}
+                        <p class="text-red-500 text-sm mt-1">{{ form.expiry_date.errors }}</p>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                {{ form.description }}
+                {% if form.description.errors %}
+                    <p class="text-red-500 text-sm mt-1">{{ form.description.errors }}</p>
+                {% endif %}
+            </div>
+            
+            <div class="flex items-center">
+                {{ form.prescription_required }}
+                <label class="ml-2 text-sm text-gray-700">Prescription Required</label>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Upload Image</label>
+                    {{ form.image }}
+                    {% if form.image.errors %}
+                        <p class="text-red-500 text-sm mt-1">{{ form.image.errors }}</p>
+                    {% endif %}
+                    {% if medicine and medicine.image %}
+                        <p class="text-sm text-gray-500 mt-2">Current: <a href="{{ medicine.image.url }}" target="_blank" class="text-blue-600">View</a></p>
+                    {% endif %}
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Image URL (Alternative)</label>
+                    {{ form.image_url }}
+                    {% if form.image_url.errors %}
+                        <p class="text-red-500 text-sm mt-1">{{ form.image_url.errors }}</p>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Benefits (one per line)</label>
+                {{ form.benefits_json }}
+                <p class="text-xs text-gray-500 mt-1">{{ form.benefits_json.help_text }}</p>
+            </div>
+            
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">How to Use (one per line)</label>
+                {{ form.how_to_use_json }}
+                <p class="text-xs text-gray-500 mt-1">{{ form.how_to_use_json.help_text }}</p>
+            </div>
+            
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Side Effects (one per line)</label>
+                {{ form.side_effects_json }}
+                <p class="text-xs text-gray-500 mt-1">{{ form.side_effects_json.help_text }}</p>
+            </div>
+            
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">FAQs (Format: Question|Answer, one per line)</label>
+                {{ form.faqs_json }}
+                <p class="text-xs text-gray-500 mt-1">{{ form.faqs_json.help_text }}</p>
+            </div>
+            
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Additional Images</label>
+                <div id="imageFields">
+                    <div class="flex items-center space-x-2 mb-2">
+                        <input type="url" name="additional_image_0" placeholder="Enter image URL" 
+                               class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary">
+                        <button type="button" onclick="removeImageField(this)" class="bg-red-500 text-white px-3 py-2 rounded-lg hover:bg-red-600 hidden">Remove</button>
+                    </div>
+                </div>
+                <button type="button" onclick="addImageField()" class="mt-2 bg-primary text-white px-4 py-2 rounded-lg hover:bg-opacity-90 transition-all transform hover:scale-105">
+                    + Add Image
+                </button>
+                <p class="text-xs text-gray-500 mt-1">Add multiple image URLs. Click + to add more fields.</p>
+                {% if medicine and medicine.additional_images %}
+                    <p class="text-sm text-gray-500 mt-2">Current additional images: {{ medicine.additional_images|length }}</p>
+                {% endif %}
+            </div>
+            
+            <div class="flex space-x-4">
+                <button type="submit" class="bg-green-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-green-700">
+                    Save
+                </button>
+                <a href="{% url 'medicine_list' %}" class="bg-gray-200 text-gray-800 px-6 py-2 rounded-lg font-semibold hover:bg-gray-300">
+                    Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+let imageFieldCount = {% if medicine and medicine.additional_images %}{{ medicine.additional_images|length }}{% else %}1{% endif %};
+
+function addImageField() {
+    const container = document.getElementById('imageFields');
+    const newField = document.createElement('div');
+    newField.className = 'flex items-center space-x-2 mb-2 image-field';
+    newField.innerHTML = `
+        <input type="url" name="additional_image_${imageFieldCount}" placeholder="Enter image URL" 
+               class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary">
+        <button type="button" onclick="removeImageField(this)" class="bg-red-500 text-white px-3 py-2 rounded-lg hover:bg-red-600">Remove</button>
+    `;
+    container.appendChild(newField);
+    imageFieldCount++;
+    
+    // Show remove buttons if more than one field
+    if (container.children.length > 1) {
+        container.querySelectorAll('button').forEach(btn => {
+            if (btn.textContent === 'Remove') {
+                btn.classList.remove('hidden');
+            }
+        });
+    }
+}
+
+function removeImageField(button) {
+    const container = document.getElementById('imageFields');
+    button.parentElement.remove();
+    
+    // Hide remove buttons if only one field left
+    if (container.children.length === 1) {
+        const removeBtn = container.querySelector('button');
+        if (removeBtn && removeBtn.textContent === 'Remove') {
+            removeBtn.classList.add('hidden');
+        }
+    }
+}
+</script>
+{% endblock %}
+

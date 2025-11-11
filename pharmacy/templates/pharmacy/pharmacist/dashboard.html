@@ -1,0 +1,228 @@
+{% extends 'pharmacy/base.html' %}
+
+{% block title %}Pharmacist Dashboard - Online Pharmacy{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-3xl font-bold">Pharmacist Dashboard</h1>
+        <div class="flex space-x-4">
+            <a href="{% url 'medicine_list' %}" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+                Manage Medicines
+            </a>
+            <a href="{% url 'category_list' %}" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">
+                Manage Categories
+            </a>
+            <a href="{% url 'pharmacist_orders' %}" class="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700">
+                View Orders
+            </a>
+            <a href="{% url 'add_delivery_agent' %}" class="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700">
+                Add Delivery Agent
+            </a>
+            <a href="{% url 'testimonial_list' %}" class="bg-pink-600 text-white px-4 py-2 rounded-lg hover:bg-pink-700">
+                Testimonials
+            </a>
+        </div>
+    </div>
+    
+    <!-- Analytics Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <h3 class="text-gray-600 text-sm font-semibold mb-2">Total Orders</h3>
+            <p class="text-3xl font-bold text-blue-600">{{ total_orders }}</p>
+        </div>
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <h3 class="text-gray-600 text-sm font-semibold mb-2">Total Sales</h3>
+            <p class="text-3xl font-bold text-green-600">₹{{ total_sales|floatformat:2 }}</p>
+        </div>
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <h3 class="text-gray-600 text-sm font-semibold mb-2">Delivered Orders</h3>
+            <p class="text-3xl font-bold text-purple-600">{{ delivered_orders }}</p>
+        </div>
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <h3 class="text-gray-600 text-sm font-semibold mb-2">Total Customers</h3>
+            <p class="text-3xl font-bold text-orange-600">{{ total_customers }}</p>
+        </div>
+    </div>
+    
+    <!-- Sales Chart -->
+    <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+        <h2 class="text-xl font-semibold mb-4">Last 7 Days Sales</h2>
+        <canvas id="salesChart" height="80"></canvas>
+    </div>
+    
+    <!-- Low Stock Alerts -->
+    <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+        <h2 class="text-xl font-semibold mb-4">Low Stock Alerts</h2>
+        {% if low_stock_medicines %}
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Medicine</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">SKU</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Stock</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        {% for medicine in low_stock_medicines %}
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm font-medium text-gray-900">{{ medicine.name }}</div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm text-gray-500">{{ medicine.sku }}</div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="px-2 py-1 text-xs font-semibold rounded-full {% if medicine.stock < 10 %}bg-red-100 text-red-800{% else %}bg-green-100 text-green-800{% endif %}">
+                                        <span class="{% if medicine.stock < 10 %}text-red-600 font-bold{% endif %}">{{ medicine.stock }}</span>
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                    <a href="{% url 'medicine_edit' medicine.pk %}" class="text-blue-600 hover:text-blue-900">Edit</a>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <p class="text-gray-500">No low stock alerts.</p>
+        {% endif %}
+    </div>
+    
+    <!-- Customers and Delivery Agents -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <!-- Customers Section -->
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <h2 class="text-xl font-semibold mb-4">Recent Customers</h2>
+            {% if customers_with_orders %}
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Username</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Phone</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Orders</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Joined</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            {% for item in customers_with_orders %}
+                                <tr>
+                                    <td class="px-4 py-3 whitespace-nowrap">
+                                        <div class="text-sm font-medium text-gray-900">{{ item.user.username }}</div>
+                                    </td>
+                                    <td class="px-4 py-3 whitespace-nowrap">
+                                        <div class="text-sm text-gray-500">{{ item.user.email }}</div>
+                                    </td>
+                                    <td class="px-4 py-3 whitespace-nowrap">
+                                        <div class="text-sm text-gray-500">{{ item.user.profile.phone|default:"-" }}</div>
+                                    </td>
+                                    <td class="px-4 py-3 whitespace-nowrap">
+                                        <span class="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                                            {{ item.order_count }}
+                                        </span>
+                                    </td>
+                                    <td class="px-4 py-3 whitespace-nowrap">
+                                        <div class="text-sm text-gray-500">{{ item.user.date_joined|date:"M d, Y" }}</div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p class="text-gray-500">No customers found.</p>
+            {% endif %}
+        </div>
+        
+        <!-- Delivery Agents Section -->
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <h2 class="text-xl font-semibold mb-4">Delivery Agents</h2>
+            {% if agents_with_orders %}
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Username</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Phone</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Total Orders</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Delivered</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            {% for item in agents_with_orders %}
+                                <tr>
+                                    <td class="px-4 py-3 whitespace-nowrap">
+                                        <div class="text-sm font-medium text-gray-900">{{ item.user.username }}</div>
+                                    </td>
+                                    <td class="px-4 py-3 whitespace-nowrap">
+                                        <div class="text-sm text-gray-500">{{ item.user.email }}</div>
+                                    </td>
+                                    <td class="px-4 py-3 whitespace-nowrap">
+                                        <div class="text-sm text-gray-500">{{ item.user.profile.phone|default:"-" }}</div>
+                                    </td>
+                                    <td class="px-4 py-3 whitespace-nowrap">
+                                        <span class="px-2 py-1 text-xs font-semibold rounded-full bg-purple-100 text-purple-800">
+                                            {{ item.total_orders }}
+                                        </span>
+                                    </td>
+                                    <td class="px-4 py-3 whitespace-nowrap">
+                                        <span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                                            {{ item.delivered_orders }}
+                                        </span>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p class="text-gray-500">No delivery agents found.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+const ctx = document.getElementById('salesChart').getContext('2d');
+const salesChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+        labels: JSON.parse('{{ sales_labels|escapejs }}'),
+        datasets: [{
+            label: 'Sales (₹)',
+            data: JSON.parse('{{ sales_data|escapejs }}'),
+            borderColor: 'rgb(34, 197, 94)',
+            backgroundColor: 'rgba(34, 197, 94, 0.1)',
+            tension: 0.4,
+            fill: true
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: {
+            legend: {
+                display: false
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    callback: function(value) {
+                        return '₹' + value;
+                    }
+                }
+            }
+        }
+    }
+});
+</script>
+{% endblock %}
+
